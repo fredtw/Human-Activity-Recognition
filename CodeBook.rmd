@@ -1,0 +1,85 @@
+---
+title: "Human_Activity"
+author: "Frederic TWAHIRWA"
+date: "4 février 2017"
+output: html_document
+---
+
+```{r}
+rm(list=ls(all=TRUE))
+```
+
+```{r}
+# load packages
+library(dplyr)
+library(tidyr)
+library(data.table)
+```
+
+```{r}
+# load dat sets in tamporaly data set "titanicf"
+#datatrain<-read.delim(file = 'X_train.txt', header = FALSE, sep = '', dec = '.')
+#datatrain<-fread(file = 'X_train.txt', header = FALSE, sep = 'auto', dec = '.')
+
+
+datatrain<-fread(file='X_train.txt')
+datatest<-fread(file='X_test.txt')
+
+# name the data sets columns with features
+
+featuresnames<-fread(file = 'features.txt')
+colnames(datatrain)<-featuresnames$V2
+colnames(datatest)<-featuresnames$V2
+
+# Creates variables called ActivityLabel and ActivityName that label all observations with the corresponding activity labels and names respectively
+
+activitiesTrain<-fread('y_train.txt')
+colnames(activitiesTrain)<-'Act_number'
+activitiesTrain$Act_name='NA' 
+activitiesTrain$Act_name[which(activitiesTrain$Act_number==1)]='WALKING'
+activitiesTrain$Act_name[which(activitiesTrain$Act_number==2)]='WALKING_UPSTAIRS'
+activitiesTrain$Act_name[which(activitiesTrain$Act_number==3)]='WALKING_DOWNSTAIRS'
+activitiesTrain$Act_name[which(activitiesTrain$Act_number==4)]='SITTING'
+activitiesTrain$Act_name[which(activitiesTrain$Act_number==5)]='STANDING'
+activitiesTrain$Act_name[which(activitiesTrain$Act_number==6)]='LAYING'
+
+activitiesTest<-fread('y_test.txt')
+colnames(activitiesTest)<-'Act_number'
+activitiesTest$Act_name='NA' 
+activitiesTest$Act_name[which(activitiesTest$Act_number==1)]='WALKING'
+activitiesTest$Act_name[which(activitiesTest$Act_number==2)]='WALKING_UPSTAIRS'
+activitiesTest$Act_name[which(activitiesTest$Act_number==3)]='WALKING_DOWNSTAIRS'
+activitiesTest$Act_name[which(activitiesTest$Act_number==4)]='SITTING'
+activitiesTest$Act_name[which(activitiesTest$Act_number==5)]='STANDING'
+activitiesTest$Act_name[which(activitiesTest$Act_number==6)]='LAYING'
+
+subjectTrain<-fread('subject_train.txt')
+names(subjectTrain)<-'subjectID' # names and colnames do the same job but the big difference is that colnames also works for matrices, whereas names does not (just dataframes)
+subjectTest<-fread('subject_test.txt')
+colnames(subjectTest)<-'subjectID'
+
+# combine 3 datasets : subjects, activities and variables in a one dataset
+
+datatrainComplet<-cbind(subjectTrain, activitiesTrain, datatrain )
+datatestComplet<-cbind(subjectTest, activitiesTest, datatest )
+
+# merge the 2 dataset in a one
+datamerge<-rbind(datatrainComplet, datatestComplet)
+
+# Extracts columns containing mean and standard deviation for each measurement
+
+meansd<-datamerge[ ,grepl("mean|std", names(datamerge)), with=FALSE]
+meansd1<-datamerge[ ,1:3]
+meansd <-cbind(meansd1, meansd)
+
+# From the data set in step 3, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
+
+tidyMean<- aggregate(meansd[, 4:ncol(meansd)], 
+                    by=list(subjectID=meansd$subjectID,
+                            Act_name=meansd$Act_name),
+                    mean)
+
+
+
+
+```
